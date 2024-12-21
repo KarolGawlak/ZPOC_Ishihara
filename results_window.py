@@ -51,7 +51,6 @@ class ResultsWindow(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
         
-        # Style the summary section
         summary_frame = QFrame()
         summary_frame.setStyleSheet("""
             QFrame {
@@ -66,7 +65,6 @@ class ResultsWindow(QDialog):
         """)
         summary_layout = QVBoxLayout(summary_frame)
         
-        # Add summary statistics
         total_tests = len(self.results)
         avg_time = sum(r['reaction_time'] for r in self.results) / total_tests if total_tests > 0 else 0
         
@@ -92,7 +90,6 @@ class ResultsWindow(QDialog):
         
         layout.addWidget(summary_frame)
 
-        # Create results table with mode-specific columns
         table = QTableWidget()
         if self.is_reaction_mode:
             table.setColumnCount(3)
@@ -110,7 +107,6 @@ class ResultsWindow(QDialog):
                 "Poprawność"
             ])
         
-        # Populate table
         table.setRowCount(len(self.results))
         for i, result in enumerate(self.results):
             table.setItem(i, 0, QTableWidgetItem(str(result['test_number'])))
@@ -120,7 +116,6 @@ class ResultsWindow(QDialog):
             if not self.is_reaction_mode:
                 table.setItem(i, 3, QTableWidgetItem("Tak" if result['correct'] else "Nie"))
 
-        # Adjust table appearance
         header = table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Stretch)
         table.setStyleSheet("""
@@ -138,7 +133,6 @@ class ResultsWindow(QDialog):
         
         layout.addWidget(table)
 
-        # Create figure for intensity chart
         self.figure = Figure(figsize=(8, 4))
         self.canvas = FigureCanvas(self.figure)
         self._create_intensity_chart()

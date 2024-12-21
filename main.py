@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                            QPushButton, QLabel, QFileDialog, QProgressBar,
-                           QMessageBox, QHBoxLayout, QInputDialog, QDialog,
+                           QMessageBox, QHBoxLayout, QInputDialog,
                            QLineEdit, QRadioButton, QButtonGroup, QFrame)
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap, QImage, qRgb
@@ -28,7 +28,6 @@ class ColorPerceptionTest(QMainWindow):
     składowych kolorów RGB.
     """
 
-    # Stałe konfiguracyjne
     WINDOW_TITLE = "Test Percepcji Barw"
     WINDOW_GEOMETRY = (100, 100, 800, 600)
     IMAGE_SIZE = (400, 400)
@@ -36,9 +35,8 @@ class ColorPerceptionTest(QMainWindow):
     INTENSITY_STEP = 3
     MAX_TEST_TIME = 15  # seconds
     COLOR_COMPONENTS = ['R', 'G', 'B']
-    DEFAULT_MAX_TESTS = 10  # Number of default test images
+    DEFAULT_MAX_TESTS = 4  # Liczba poczatkowych obrazkow
     
-    # Add these style constants
     STYLE_SHEET = """
         QMainWindow {
             background-color: #f0f0f0;
@@ -109,9 +107,8 @@ class ColorPerceptionTest(QMainWindow):
         self.setGeometry(*self.WINDOW_GEOMETRY)
         self.setStyleSheet(self.STYLE_SHEET)
         
-        # Initialize variables
         self.current_test: int = 0
-        self.max_tests: int = self.DEFAULT_MAX_TESTS  # Start with default number
+        self.max_tests: int = self.DEFAULT_MAX_TESTS  
         self.start_time: Optional[float] = None
         self.results: List[Dict[str, Any]] = []
         self.current_intensity: float = 0
@@ -124,7 +121,6 @@ class ColorPerceptionTest(QMainWindow):
         self.init_ui()
         
     def init_ui(self):
-        # Create central widget and layout with margins and spacing
         central_widget = QWidget()
         central_widget.setStyleSheet("background-color: white; border-radius: 10px;")
         self.setCentralWidget(central_widget)
@@ -132,7 +128,6 @@ class ColorPerceptionTest(QMainWindow):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
         
-        # Mode selection with custom styling
         mode_layout = QHBoxLayout()
         mode_label = QLabel("Wybierz tryb testu:")
         mode_label.setStyleSheet("font-weight: bold;")
@@ -150,7 +145,6 @@ class ColorPerceptionTest(QMainWindow):
         mode_layout.addWidget(self.reaction_mode)
         layout.addLayout(mode_layout)
         
-        # Add intensity step configuration
         intensity_layout = QHBoxLayout()
         intensity_label = QLabel("Prędkość zmiany progu składowej koloru (domyślnie 3):")
         intensity_label.setStyleSheet("font-weight: bold;")
@@ -168,17 +162,14 @@ class ColorPerceptionTest(QMainWindow):
         
         intensity_layout.addWidget(intensity_label)
         intensity_layout.addWidget(self.intensity_input)
-        intensity_layout.addStretch()  # This will push the widgets to the left
+        intensity_layout.addStretch()  
         layout.addLayout(intensity_layout)
         
-        # Add some spacing between sections
         layout.addSpacing(10)
         
-        # Create image label first
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
         
-        # Create a frame for the image display
         image_frame = QFrame()
         image_frame.setStyleSheet("""
             QFrame {
@@ -192,7 +183,6 @@ class ColorPerceptionTest(QMainWindow):
         image_layout.addWidget(self.image_label)
         layout.addWidget(image_frame)
         
-        # Create number input field
         self.input_layout = QHBoxLayout()
         input_label = QLabel("Wprowadź widoczną liczbę:")
         self.number_input = QLineEdit()
@@ -203,7 +193,6 @@ class ColorPerceptionTest(QMainWindow):
         self.input_layout.addWidget(self.number_input)
         layout.addLayout(self.input_layout)
         
-        # Create progress bar and label
         progress_layout = QHBoxLayout()
         progress_label = QLabel("Postęp testu:")
         self.progress_bar = QProgressBar()
@@ -211,10 +200,8 @@ class ColorPerceptionTest(QMainWindow):
         progress_layout.addWidget(self.progress_bar)
         layout.addLayout(progress_layout)
         
-        # Create buttons layout
         button_layout = QHBoxLayout()
         
-        # Create buttons first
         self.start_button = QPushButton("Start testu")
         self.start_button.clicked.connect(self.start_test)
         
@@ -225,7 +212,6 @@ class ColorPerceptionTest(QMainWindow):
         self.add_image_button = QPushButton("Dodaj własny obraz")
         self.add_image_button.clicked.connect(self.add_custom_image)
         
-        # Now style the buttons
         self.start_button.setStyleSheet("""
             QPushButton {
                 background-color: #2ecc71;
@@ -256,16 +242,13 @@ class ColorPerceptionTest(QMainWindow):
             }
         """)
         
-        # Add buttons to layout
         button_layout.addWidget(self.start_button)
         button_layout.addWidget(self.stop_button)
         button_layout.addWidget(self.add_image_button)
         layout.addLayout(button_layout)
         
-        # Instructions layout
         instructions_layout = QVBoxLayout()
         
-        # Create status label
         self.status_label = QLabel("Naciśnij 'Start testu' aby rozpocząć")
         self.status_label.setStyleSheet("""
             QLabel {
@@ -279,7 +262,6 @@ class ColorPerceptionTest(QMainWindow):
         """)
         instructions_layout.addWidget(self.status_label)
         
-        # Update shortcuts label based on mode
         self.shortcuts_label = QLabel()
         self.update_shortcuts_label()
         self.shortcuts_label.setAlignment(Qt.AlignCenter)
@@ -294,23 +276,20 @@ class ColorPerceptionTest(QMainWindow):
         
         layout.addLayout(instructions_layout)
         
-        # Setup timer for color intensity changes
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_color_intensity)
         
-        # Setup results graph
         self.figure = Figure(figsize=(6, 4))
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
         
-        # Connect mode change signal
         self.mode_group.buttonClicked.connect(self.on_mode_changed)
 
     def on_mode_changed(self):
         """Handle test mode change"""
         is_number_mode = self.number_mode.isChecked()
         self.number_input.setVisible(is_number_mode)
-        self.input_layout.itemAt(0).widget().setVisible(is_number_mode)  # Input label
+        self.input_layout.itemAt(0).widget().setVisible(is_number_mode) 
         self.update_shortcuts_label()
 
     def update_shortcuts_label(self):
@@ -321,25 +300,29 @@ class ColorPerceptionTest(QMainWindow):
             self.shortcuts_label.setText("Naciśnij SPACJĘ gdy rozpoznasz liczbę na obrazie")
 
     def load_test_images(self) -> None:
+        """Load test images from the test_images directory."""
+        self.test_images = [] 
         try:
             self._load_images_from_directory()
-        except FileNotFoundError as e:
-            self._handle_missing_images_error(str(e))
+            
+            if not self.test_images:
+                self._reset_image_numbers()
+           
+            self.max_tests = len(self.test_images)
         except Exception as e:
-            self._handle_general_loading_error(str(e))
+            print(f"Warning: Could not load test images: {str(e)}")
 
     def _load_images_from_directory(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         image_dir = os.path.join(current_dir, 'test_images')
         
         if not os.path.exists(image_dir):
-            raise FileNotFoundError(f"Katalog {image_dir} nie istnieje")
+            print(f"Warning: Directory {image_dir} does not exist")
+            return
         
-        # First load default images (1 to DEFAULT_MAX_TESTS)
         for i in range(1, self.DEFAULT_MAX_TESTS + 1):
             self._load_single_image(image_dir, i)
         
-        # Then load any custom images that might exist
         custom_images = [f for f in os.listdir(image_dir) 
                         if f.startswith('it-') and 
                         int(f.split('-')[1].split('.')[0]) > self.DEFAULT_MAX_TESTS]
@@ -348,18 +331,6 @@ class ColorPerceptionTest(QMainWindow):
                                key=lambda x: int(x.split('-')[1].split('.')[0])):
             img_num = int(image_file.split('-')[1].split('.')[0])
             self._load_single_image(image_dir, img_num)
-            self.max_tests = max(self.max_tests, img_num)
-
-    def _handle_missing_images_error(self, error_msg: str) -> None:
-        QMessageBox.critical(self, "Błąd", f"Nie znaleziono katalogu z obrazami: {error_msg}")
-
-    def _handle_general_loading_error(self, error_msg: str) -> None:
-        """Obsługuje ogólne błędy podczas ładowania obrazów."""
-        QMessageBox.critical(
-            self, 
-            "Błąd", 
-            f"Wystąpił błąd podczas ładowania obrazów: {error_msg}"
-        )
 
     def _load_single_image(self, image_dir: str, index: int) -> None:
         """
@@ -383,23 +354,23 @@ class ColorPerceptionTest(QMainWindow):
                     print(f"Nie udao się załadować obrazu: it-{index}.png")
             except Exception as e:
                 print(f"Błąd podczas ładowania obrazu it-{index}.png: {str(e)}")
-                raise
         else:
             print(f"Nie znaleziono pliku: {image_path}")
-            if not self.test_images:  # Tylko jeśli nie mamy żadnych obrazów
-                raise FileNotFoundError(f"Nie znaleziono pliku: {image_path}")
 
     def start_test(self):
         if not self.test_images:
-            QMessageBox.warning(self, "Ostrzeżenie", "Brak dostępnych obrazów testowych!")
+            QMessageBox.warning(
+                self, 
+                "Ostrzeżenie", 
+                "Test nie może zostać rozpoczęty, brak obrazów testowych."
+            )
             return
         
-        # Get custom intensity step if provided
         custom_step = self.intensity_input.text().strip()
         if custom_step:
             try:
                 step = float(custom_step)
-                if 0 < step <= 10:  # Limit the range for reasonable values
+                if 0 < step <= 10:  
                     self.INTENSITY_STEP = step
                 else:
                     QMessageBox.warning(
@@ -418,7 +389,6 @@ class ColorPerceptionTest(QMainWindow):
         else:
             self.INTENSITY_STEP = 3
         
-        # Disable intensity input during test
         self.intensity_input.setEnabled(False)
         
         self.test_running = True
@@ -428,15 +398,12 @@ class ColorPerceptionTest(QMainWindow):
         self.stop_button.setEnabled(True)
         self.progress_bar.setValue(0)
         
-        # Update button texts
         self.start_button.setText("Restart testu")
         self.stop_button.setText("Przerwij test")
         
-        # Disable mode selection during test
         self.number_mode.setEnabled(False)
         self.reaction_mode.setEnabled(False)
         
-        # Handle input based on mode
         if self.number_mode.isChecked():
             self.number_input.setEnabled(True)
             self.number_input.setFocus()
@@ -450,11 +417,10 @@ class ColorPerceptionTest(QMainWindow):
         self.test_running = False
         self.timer.stop()
         self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(True)  # Keep stop button enabled
+        self.stop_button.setEnabled(True)  
         self.number_input.setEnabled(False)
         self.intensity_input.setEnabled(True)
         
-        # Change stop button to resume
         self.stop_button.setText("Wznów test")
         
         self.status_label.setText("Test zatrzymany")
@@ -467,18 +433,15 @@ class ColorPerceptionTest(QMainWindow):
         self.number_input.setEnabled(False)
         self.intensity_input.setEnabled(True)
         
-        # Change start button text to "Restart testu"
         self.start_button.setText("Restart testu")
-        self.start_button.clicked.disconnect()  # Disconnect current handler
-        self.start_button.clicked.connect(self.restart_test)  # Connect to restart handler
+        self.start_button.clicked.disconnect() 
+        self.start_button.clicked.connect(self.restart_test)
         
-        # Re-enable mode selection
         self.number_mode.setEnabled(True)
         self.reaction_mode.setEnabled(True)
         
         self.status_label.setText("Test zakończony - wyświetlam wyniki")
         
-        # Save results and show results window
         self.save_results()
         results_window = ResultsWindow(self.results, self)
         results_window.exec_()
@@ -491,15 +454,13 @@ class ColorPerceptionTest(QMainWindow):
         self.progress_bar.setValue(0)
         self.intensity_input.setEnabled(True)
         
-        # Reset button states and text
         self.start_button.setText("Start testu")
-        self.start_button.clicked.disconnect()  # Disconnect restart handler
-        self.start_button.clicked.connect(self.start_test)  # Connect back to start handler
+        self.start_button.clicked.disconnect()
+        self.start_button.clicked.connect(self.start_test)
         self.stop_button.setText("Przerwij test")
         
         self.status_label.setText("Naciśnij 'Start testu' aby rozpocząć")
         
-        # Clear the image display
         self.image_label.clear()
 
     def save_results(self):
@@ -576,10 +537,8 @@ class ColorPerceptionTest(QMainWindow):
         Returns:
             Obraz z dostosowaną intensywnością wybranej składowej
         """
-        # Stwórz kopię obrazu
         adjusted = image.copy()
         
-        # Dostosuj intensywność wybranej składowej koloru
         if self.color_component == 'R':
             adjusted[:,:,0] = np.clip(adjusted[:,:,0] * (intensity / 255.0), 0, 255)
         elif self.color_component == 'G':
@@ -593,18 +552,14 @@ class ColorPerceptionTest(QMainWindow):
         if not self.test_images or self.current_test >= len(self.test_images):
             return
             
-        # Pobierz aktualny obraz testowy
         current_image = self.test_images[self.current_test]
         
-        # Dostosuj intensywność
         adjusted_image = self.adjust_image_intensity(current_image, self.current_intensity)
         
-        # Konwertuj na QImage
         height, width = adjusted_image.shape[:2]
         bytes_per_line = 3 * width
         q_img = QImage(adjusted_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
         
-        # Wyświetl obraz
         pixmap = QPixmap.fromImage(q_img)
         scaled_pixmap = pixmap.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_label.setPixmap(scaled_pixmap)
@@ -620,7 +575,6 @@ class ColorPerceptionTest(QMainWindow):
         self.timer.stop()
         reaction_time = time.time() - self.start_time
         
-        # Get correct number from dictionary
         current_image_name = f'it-{self.current_test + 1}.png'
         correct_number = IMAGE_NUMBERS.get(current_image_name, '')
         
@@ -640,7 +594,6 @@ class ColorPerceptionTest(QMainWindow):
         self.current_intensity = min(255, self.current_intensity + self.INTENSITY_STEP)
         self.display_test_image()
         
-        # If maximum time elapsed, auto-submit with empty answer
         if time.time() - self.start_time > self.MAX_TEST_TIME:
             self.timer.stop()
             self.results.append({
@@ -660,9 +613,8 @@ class ColorPerceptionTest(QMainWindow):
             
         self.current_intensity = 0
         self.start_time = time.time()
-        self.timer.start(40)  # Zmniejszamy z 50ms na 40ms (20% szybciej)
+        self.timer.start(40) 
         
-        # Zmień składową koloru dla każdego testu
         self.color_component = ['R', 'G', 'B'][self.current_test % 3]
         
         self.status_label.setText(
@@ -687,7 +639,6 @@ class ColorPerceptionTest(QMainWindow):
 
     def add_custom_image(self):
         """Handle adding a custom test image."""
-        # Open file dialog to select image
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Wybierz obraz testowy",
@@ -698,7 +649,6 @@ class ColorPerceptionTest(QMainWindow):
         if not file_path:
             return
             
-        # Get the correct number from user
         number, ok = QInputDialog.getText(
             self,
             "Podaj prawidłową odpowiedź",
@@ -710,27 +660,22 @@ class ColorPerceptionTest(QMainWindow):
             return
             
         try:
-            # Copy image to test_images directory
             if not os.path.exists('test_images'):
                 os.makedirs('test_images')
                 
-            # Start numbering custom images after default images
             next_num = self.max_tests + 1
             
             new_filename = f'it-{next_num}.png'
             new_path = os.path.join('test_images', new_filename)
             
-            # Convert and save image as PNG
             img = cv2.imread(file_path)
             if img is None:
                 raise ValueError("Nie można wczytać obrazu")
                 
             cv2.imwrite(new_path, img)
             
-            # Update image_numbers.py
             self.update_image_numbers(new_filename, number)
             
-            # Increment max_tests and reload images
             self.max_tests += 1
             self.test_images = []
             self.load_test_images()
@@ -752,26 +697,26 @@ class ColorPerceptionTest(QMainWindow):
     def update_image_numbers(self, image_name: str, number: str):
         """Update the image_numbers.py file with new image-number mapping."""
         try:
-            # Read current content
-            with open('image_numbers.py', 'r', encoding='utf-8') as f:
-                content = f.read()
+            try:
+                with open('image_numbers.py', 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                if not content or content == 'IMAGE_NUMBERS = {\n} \n':
+                    dict_content = {}
+                else:
+                    
+                    import ast
+                    dict_content = ast.literal_eval(content.split('=')[1].strip())
+            except FileNotFoundError:
+                dict_content = {}
             
-            # Parse the dictionary
-            import ast
-            tree = ast.parse(content)
-            dict_content = ast.literal_eval(content.split('=')[1].strip())
-            
-            # Add new mapping
             dict_content[image_name] = number
             
-            # Write updated content
             with open('image_numbers.py', 'w', encoding='utf-8') as f:
                 f.write('IMAGE_NUMBERS = {\n')
                 for key, value in sorted(dict_content.items()):
                     f.write(f"    '{key}': '{value}',\n")
                 f.write('} \n')
                 
-            # Reload the IMAGE_NUMBERS module
             import importlib
             import image_numbers
             importlib.reload(image_numbers)
@@ -783,33 +728,43 @@ class ColorPerceptionTest(QMainWindow):
         if not self.test_running:
             return
         
-        # Only handle spacebar in reaction mode
         if not self.number_mode.isChecked() and event.key() == Qt.Key_Space:
             self.timer.stop()
             reaction_time = time.time() - self.start_time
             
-            # For reaction mode, we don't validate the answer
             self.results.append({
                 'test_number': self.current_test + 1,
                 'reaction_time': reaction_time,
                 'intensity': self.current_intensity,
                 'color_component': self.color_component,
-                'user_input': 'SPACE',  # Indicate reaction test
-                'correct': True  # Not applicable for reaction test
+                'user_input': 'SPACE',  
+                'correct': True 
             })
             self.next_test()
 
     def handle_stop_resume(self):
         """Handle both stop and resume functionality"""
         if self.test_running:
-            # If test is running, stop it
+            
             self.stop_test()
         else:
-            # If test is stopped, resume it
+            
             self.test_running = True
             self.stop_button.setText("Przerwij test")
             self.number_input.setEnabled(True) if self.number_mode.isChecked() else self.setFocus()
             self.timer.start(40)
+
+    def _reset_image_numbers(self) -> None:
+        """Reset the image_numbers.py file to an empty dictionary."""
+        try:
+            with open('image_numbers.py', 'w', encoding='utf-8') as f:
+                f.write('IMAGE_NUMBERS = {\n} \n')
+                
+            import importlib
+            import image_numbers
+            importlib.reload(image_numbers)
+        except Exception as e:
+            print(f"Warning: Could not reset image_numbers.py: {str(e)}")
 
 def main():
     app = QApplication(sys.argv)
