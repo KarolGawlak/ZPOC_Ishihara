@@ -31,7 +31,7 @@ class ColorPerceptionTest(QMainWindow):
     WINDOW_TITLE = "Test Percepcji Barw"
     WINDOW_GEOMETRY = (100, 100, 800, 600)
     IMAGE_SIZE = (400, 400)
-    TIMER_INTERVAL = 40  # ms
+    TIMER_INTERVAL = 20  # Changed from 40 to 20 ms for faster updates
     INTENSITY_STEP = 3
     MAX_TEST_TIME = 15  # seconds
     COLOR_COMPONENTS = ['R', 'G', 'B']
@@ -286,14 +286,12 @@ class ColorPerceptionTest(QMainWindow):
         self.mode_group.buttonClicked.connect(self.on_mode_changed)
 
     def on_mode_changed(self):
-        """Handle test mode change"""
         is_number_mode = self.number_mode.isChecked()
         self.number_input.setVisible(is_number_mode)
         self.input_layout.itemAt(0).widget().setVisible(is_number_mode) 
         self.update_shortcuts_label()
 
     def update_shortcuts_label(self):
-        """Update instructions based on selected mode"""
         if self.number_mode.isChecked():
             self.shortcuts_label.setText("Naciśnij Enter gdy wprowadzisz liczbę rozpoznaną na obrazie")
         else:
@@ -333,25 +331,23 @@ class ColorPerceptionTest(QMainWindow):
             self._load_single_image(image_dir, img_num)
 
     def _load_single_image(self, image_dir: str, index: int) -> None:
-        """
-        Ładuje pojedynczy obraz testowy.
-        
-        Args:
-            image_dir: Ścieżka do katalogu z obrazami
-            index: Numer obrazu do załadowania
-        """
         image_path = os.path.join(image_dir, f'it-{index}.png')
         
         if os.path.exists(image_path):
             try:
-                img = cv2.imread(image_path)
+                # Load image with alpha channel
+                img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
                 if img is not None:
-                    # Konwersja z BGR do RGB
-                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    if img.shape[2] == 4:  # If image has alpha channel
+                        # Convert BGRA to RGBA
+                        img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
+                    else:
+                        # Convert BGR to RGB
+                        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     self.test_images.append(img)
                     print(f"Pomyślnie załadowano obraz: it-{index}.png")
                 else:
-                    print(f"Nie udao się załadować obrazu: it-{index}.png")
+                    print(f"Nie udało się załadować obrazu: it-{index}.png")
             except Exception as e:
                 print(f"Błąd podczas ładowania obrazu it-{index}.png: {str(e)}")
         else:
@@ -447,7 +443,6 @@ class ColorPerceptionTest(QMainWindow):
         results_window.exec_()
 
     def restart_test(self):
-        """Reset the test to initial state without starting it"""
         self.current_test = 0
         self.results = []
         self.current_intensity = 0
@@ -527,16 +522,6 @@ class ColorPerceptionTest(QMainWindow):
                 for c in [r['color_component'] for r in self.results]]
 
     def adjust_image_intensity(self, image: npt.NDArray, intensity: float) -> npt.NDArray:
-        """
-        Dostosowuje intensywność wybranej składowej koloru w obrazie.
-        
-        Args:
-            image: Obraz wejściowy w formacie RGB
-            intensity: Wartość intensywności w zakresie 0-255
-            
-        Returns:
-            Obraz z dostosowaną intensywnością wybranej składowej
-        """
         adjusted = image.copy()
         
         if self.color_component == 'R':
@@ -557,8 +542,13 @@ class ColorPerceptionTest(QMainWindow):
         adjusted_image = self.adjust_image_intensity(current_image, self.current_intensity)
         
         height, width = adjusted_image.shape[:2]
-        bytes_per_line = 3 * width
-        q_img = QImage(adjusted_image.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        bytes_per_line = 4 * width  # Changed from 3 to 4 for RGBA
+        
+        # Convert RGB to RGBA by adding alpha channel
+        rgba_image = cv2.cvtColor(adjusted_image, cv2.COLOR_RGB2RGBA)
+        
+        # Create QImage with alpha channel support
+        q_img = QImage(rgba_image.data, width, height, bytes_per_line, QImage.Format_RGBA8888)
         
         pixmap = QPixmap.fromImage(q_img)
         scaled_pixmap = pixmap.scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -613,7 +603,7 @@ class ColorPerceptionTest(QMainWindow):
             
         self.current_intensity = 0
         self.start_time = time.time()
-        self.timer.start(40) 
+        self.timer.start(self.TIMER_INTERVAL)  # Use the constant instead of hardcoded value
         
         self.color_component = ['R', 'G', 'B'][self.current_test % 3]
         
@@ -629,16 +619,13 @@ class ColorPerceptionTest(QMainWindow):
 
     @property
     def is_test_complete(self) -> bool:
-        """Sprawdza czy test został ukończony."""
         return self.current_test >= self.max_tests
 
     @property
     def test_progress(self) -> float:
-        """Zwraca postęp testu w procentach."""
         return (self.current_test / self.max_tests) * 100
 
     def add_custom_image(self):
-        """Handle adding a custom test image."""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Wybierz obraz testowy",
@@ -743,16 +730,13 @@ class ColorPerceptionTest(QMainWindow):
             self.next_test()
 
     def handle_stop_resume(self):
-        """Handle both stop and resume functionality"""
         if self.test_running:
-            
             self.stop_test()
         else:
-            
             self.test_running = True
             self.stop_button.setText("Przerwij test")
             self.number_input.setEnabled(True) if self.number_mode.isChecked() else self.setFocus()
-            self.timer.start(40)
+            self.timer.start(self.TIMER_INTERVAL)  # Use the constant instead of hardcoded value
 
     def _reset_image_numbers(self) -> None:
         """Reset the image_numbers.py file to an empty dictionary."""
