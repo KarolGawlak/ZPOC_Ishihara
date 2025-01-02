@@ -31,9 +31,9 @@ class ColorPerceptionTest(QMainWindow):
     WINDOW_TITLE = "Test Percepcji Barw"
     WINDOW_GEOMETRY = (100, 100, 800, 600)
     IMAGE_SIZE = (400, 400)
-    TIMER_INTERVAL = 20  # Changed from 40 to 20 ms for faster updates
+    TIMER_INTERVAL = 20  # ms
     INTENSITY_STEP = 3
-    MAX_TEST_TIME = 15  # seconds
+    MAX_TEST_TIME = 15  # s
     COLOR_COMPONENTS = ['R', 'G', 'B']
     DEFAULT_MAX_TESTS = 4  # Liczba poczatkowych obrazkow
     
@@ -136,7 +136,7 @@ class ColorPerceptionTest(QMainWindow):
         self.mode_group = QButtonGroup()
         self.number_mode = QRadioButton("Test rozpoznawania liczb")
         self.reaction_mode = QRadioButton("Test czasu reakcji")
-        self.number_mode.setChecked(True)  # Default mode
+        self.number_mode.setChecked(True)  # tryb domyślny
         
         self.mode_group.addButton(self.number_mode)
         self.mode_group.addButton(self.reaction_mode)
@@ -335,14 +335,13 @@ class ColorPerceptionTest(QMainWindow):
         
         if os.path.exists(image_path):
             try:
-                # Load image with alpha channel
                 img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
                 if img is not None:
-                    if img.shape[2] == 4:  # If image has alpha channel
-                        # Convert BGRA to RGBA
+                    if img.shape[2] == 4:
+                        # Zamiana BGRA na RGBA
                         img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
                     else:
-                        # Convert BGR to RGB
+                        # Zamiana BGR na RGB
                         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     self.test_images.append(img)
                     print(f"Pomyślnie załadowano obraz: it-{index}.png")
@@ -542,12 +541,10 @@ class ColorPerceptionTest(QMainWindow):
         adjusted_image = self.adjust_image_intensity(current_image, self.current_intensity)
         
         height, width = adjusted_image.shape[:2]
-        bytes_per_line = 4 * width  # Changed from 3 to 4 for RGBA
+        bytes_per_line = 4 * width
         
-        # Convert RGB to RGBA by adding alpha channel
         rgba_image = cv2.cvtColor(adjusted_image, cv2.COLOR_RGB2RGBA)
         
-        # Create QImage with alpha channel support
         q_img = QImage(rgba_image.data, width, height, bytes_per_line, QImage.Format_RGBA8888)
         
         pixmap = QPixmap.fromImage(q_img)
@@ -603,7 +600,7 @@ class ColorPerceptionTest(QMainWindow):
             
         self.current_intensity = 0
         self.start_time = time.time()
-        self.timer.start(self.TIMER_INTERVAL)  # Use the constant instead of hardcoded value
+        self.timer.start(self.TIMER_INTERVAL)
         
         self.color_component = ['R', 'G', 'B'][self.current_test % 3]
         
@@ -682,7 +679,7 @@ class ColorPerceptionTest(QMainWindow):
             )
 
     def update_image_numbers(self, image_name: str, number: str):
-        """Update the image_numbers.py file with new image-number mapping."""
+        """Aktualizuj plik image_numbers.py"""
         try:
             try:
                 with open('image_numbers.py', 'r', encoding='utf-8') as f:
@@ -739,7 +736,7 @@ class ColorPerceptionTest(QMainWindow):
             self.timer.start(self.TIMER_INTERVAL)  # Use the constant instead of hardcoded value
 
     def _reset_image_numbers(self) -> None:
-        """Reset the image_numbers.py file to an empty dictionary."""
+        """Resetuje plik image_numbers.py do pustego słownika"""
         try:
             with open('image_numbers.py', 'w', encoding='utf-8') as f:
                 f.write('IMAGE_NUMBERS = {\n} \n')
